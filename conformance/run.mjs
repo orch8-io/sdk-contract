@@ -112,7 +112,13 @@ class Harness {
   }
 
   spawn(mode, env) {
-    const child = spawn(`${this.adapter} ${mode}`, {
+    // `exec` makes the adapter replace the shell, so signals and the exit
+    // status are the adapter's own. dash (Ubuntu's /bin/sh) does not exec a
+    // trailing simple command by itself, unlike bash and macOS sh.
+    const command = process.platform === "win32"
+      ? `${this.adapter} ${mode}`
+      : `exec ${this.adapter} ${mode}`;
+    const child = spawn(command, {
       shell: true,
       env,
       detached: process.platform !== "win32",
