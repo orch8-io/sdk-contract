@@ -1,0 +1,187 @@
+{
+  "$comment": "Push-dispatch signature vectors. signature = \"sha256=\" + hex(HMAC-SHA256(secret, timestamp + \".\" + body)). body is the exact UTF-8 request body; null header = header absent. See WORKER_PROTOCOL.md section 8.2.",
+  "contract_version": 1,
+  "default_tolerance_secs": 300,
+  "cases": [
+    {
+      "name": "valid signature",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": true
+    },
+    {
+      "name": "valid at +299s skew",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225899,
+      "tolerance_secs": 300,
+      "valid": true
+    },
+    {
+      "name": "valid at -299s skew",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225301,
+      "tolerance_secs": 300,
+      "valid": true
+    },
+    {
+      "name": "stale timestamp beyond tolerance",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225901,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "future timestamp beyond tolerance",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225299,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "custom tolerance respected",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225611,
+      "tolerance_secs": 10,
+      "valid": false
+    },
+    {
+      "name": "wrong secret",
+      "secret": "other-secret",
+      "timestamp": "1767225600",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "tampered body",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":2}}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "body with extra whitespace is different bytes",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}} ",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "timestamp not bound: signature replayed with new timestamp",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225605",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225605,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "missing signature header",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": null,
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "missing timestamp header",
+      "secret": "whsec_conformance",
+      "timestamp": null,
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "non-numeric timestamp",
+      "secret": "whsec_conformance",
+      "timestamp": "yesterday",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "signature without sha256= prefix",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7a4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "uppercase hex accepted",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=6F40BAE7A25D11C4B038DC91190C7171958E8C7C4BC6548076221318B333E7A4",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": true
+    },
+    {
+      "name": "truncated signature",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=6f40bae7a25d11c4b038dc91190c7171958e8c7c4bc6548076221318b333e7",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "non-hex signature",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+      "body": "{\"task_id\":\"00000000-0000-7000-8000-000000000001\",\"handler_name\":\"echo\",\"queue_name\":\"push-q\",\"params\":{\"n\":1}}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": false
+    },
+    {
+      "name": "utf-8 body signed over raw bytes",
+      "secret": "whsec_conformance",
+      "timestamp": "1767225600",
+      "signature": "sha256=a2319a5f6e3676390ccf044aa637db6f5492fc5100d7dd8ca0e7c2a556093123",
+      "body": "{\"note\":\"café ✓\"}",
+      "now": 1767225600,
+      "tolerance_secs": 300,
+      "valid": true
+    }
+  ]
+}

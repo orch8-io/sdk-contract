@@ -1,0 +1,13 @@
+{
+  "name": "@orch8.io/sdk-contract",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Language-neutral Orch8 SDK contract: OpenAPI, fixtures, worker protocol spec, conformance kit",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test conformance/test/*.test.mjs",
+    "conformance": "node conformance/run.mjs",
+    "conformance:reference": "node conformance/run.mjs --adapter \"node conformance/reference/adapter.mjs\""
+  }
+}
